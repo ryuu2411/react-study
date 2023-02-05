@@ -8,6 +8,13 @@ type Props = {
     Message: string
 };
 
+type FileData = {
+    file: any;
+    fileName: any;
+    type: any;
+    base64: any;
+}
+
 // const LIST = [
 //     { label: '1', value: 1 },
 //     { label: '2', value: 2 },
@@ -24,6 +31,7 @@ export const SamplePage4: React.VFC<Props> = (props) => {
     const [text, setText] = useState("");
     const [array, setArray] = useState<string[]>([]);
     const [drawerState, setDrawerState] = useState(true);
+    const [fileData, setFileData] = useState<FileData>();
     /* callback */
     const handleChange = useCallback((e: { target: { value: string; }; }) => {
         if (e.target.value.length > 5) {
@@ -56,6 +64,37 @@ export const SamplePage4: React.VFC<Props> = (props) => {
         document.body.style.backgroundColor = str;
         setDrawerState(close);
     };
+
+    const getFileData = (e: any) => {
+        const file = e.target.files[0];
+        let fileData: FileData;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            fileData = {
+                file: file,
+                fileName: file.name,
+                type: file.type,
+                base64: event.target?.result,
+            }
+            setFileData(fileData);
+        };
+    }
+
+    const onFileDownload = () => {
+        let bin = fileData?.base64.replace(/^.*,/, '');
+        let buffer = new Uint8Array(bin.length);
+        for(let i = 0; i < bin.length; i++){
+            buffer[i] = bin.charCodeAt(i);
+        }
+        const blob = new Blob([buffer.buffer], { type: fileData?.type});
+        const link = document.createElement('a');
+        link.download = fileData?.fileName;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
     /* life-cycle */
     useEffect(() => {
         document.body.style.backgroundColor = "lightblue"
@@ -85,6 +124,8 @@ export const SamplePage4: React.VFC<Props> = (props) => {
                 <button onClick={handleAdd}>追加</button>
             </div>
             <ItemList array={array} onDelete={(i) => deleteText(i)} />
+            <input type="file" onChange={getFileData} />
+            <button onClick={onFileDownload}>ダウンロード</button>
             <Link to="/">一覧へ</Link>
         </div>
     )
