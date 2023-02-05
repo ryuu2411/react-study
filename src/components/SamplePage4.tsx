@@ -9,9 +9,9 @@ type Props = {
 };
 
 type FileData = {
-    file: any;
+    file: Blob;
     fileName: any;
-    type: any;
+    type: string;
     base64: any;
 }
 
@@ -65,22 +65,25 @@ export const SamplePage4: React.VFC<Props> = (props) => {
         setDrawerState(close);
     };
 
-    const getFileData = (e: any) => {
+    const getFileData = useCallback((e: any) => {
         const file = e.target.files[0];
-        let fileData: FileData;
-
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = function(event) {
-            fileData = {
-                file: file,
-                fileName: file.name,
-                type: file.type,
-                base64: event.target?.result,
-            }
-            setFileData(fileData);
-        };
-    }
+        let fileData2: FileData;
+        if(file){
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(event) {
+                fileData2 = {
+                    file: file,
+                    fileName: file.name,
+                    type: file.type,
+                    base64: event.target?.result,
+                }
+                setFileData(fileData2);
+            };
+        } else {
+            setFileData(undefined);
+        }
+    }, [fileData]);
 
     const onFileDownload = () => {
         let bin = fileData?.base64.replace(/^.*,/, '');
@@ -125,7 +128,7 @@ export const SamplePage4: React.VFC<Props> = (props) => {
             </div>
             <ItemList array={array} onDelete={(i) => deleteText(i)} />
             <input type="file" onChange={getFileData} />
-            <button onClick={onFileDownload}>ダウンロード</button>
+            <button onClick={onFileDownload} disabled={!fileData || fileData === undefined}>ダウンロード</button>
             <Link to="/">一覧へ</Link>
         </div>
     )
