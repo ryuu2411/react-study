@@ -162,7 +162,6 @@ export const SamplePage4: React.VFC<Props> = (props) => {
     const handleV2 = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         // setNumV2(e.target.value);
         const changeValue = Number(e.target.value);
-        console.log(changeValue);
         if (isNaN(changeValue)) return;
         setNumV2(changeValue);
 
