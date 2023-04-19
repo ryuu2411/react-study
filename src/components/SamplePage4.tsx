@@ -26,6 +26,12 @@ export const SamplePage4: React.VFC<Props> = (props) => {
     // const [text, setText] = useState('');
     /* hooks */
     const param = useSearchParams();
+    const items = ["足し算", "引き算", "かけ算", "わり算"];
+    const [seleceItem, setSelectItem] = useState("足し算");
+    const [numOpe, setNumOpe] = useState(1);
+    const [numV1, setNumV1] = useState(0);
+    const [numV2, setNumV2] = useState(0);
+    const [resultNum, setResultNum] = useState(0);
 
     /* state */
     const [text, setText] = useState("");
@@ -68,10 +74,10 @@ export const SamplePage4: React.VFC<Props> = (props) => {
     const getFileData = useCallback((e: any) => {
         const file = e.target.files[0];
         let fileData2: FileData;
-        if(file){
+        if (file) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
-            reader.onload = function(event) {
+            reader.onload = function (event) {
                 fileData2 = {
                     file: file,
                     fileName: file.name,
@@ -86,18 +92,53 @@ export const SamplePage4: React.VFC<Props> = (props) => {
     }, [fileData]);
 
     const onFileDownload = () => {
-        let bin = fileData?.base64.replace(/^.*,/, '');
-        let buffer = new Uint8Array(bin.length);
-        for(let i = 0; i < bin.length; i++){
-            buffer[i] = bin.charCodeAt(i);
-        }
-        const blob = new Blob([buffer.buffer], { type: fileData?.type});
         const link = document.createElement('a');
         link.download = fileData?.fileName;
-        link.href = URL.createObjectURL(blob);
+        link.href = URL.createObjectURL(fileData?.fileName);
         link.click();
         URL.revokeObjectURL(link.href);
     }
+
+    const handleBtn = useCallback(() => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'text/csv';
+        input.onchange = (e: any) => {
+            const event = e as React.ChangeEvent<HTMLInputElement>;
+            const file = event.target.files?.[0];
+            if (!file) return;
+            console.log('e', e.target.files);
+            console.log(file);
+            if (file.type !== 'text/csv') {
+                alert('csvじゃありません。')
+            }
+        }
+        input.click();
+    }, [])
+
+    const handlePullChange = useCallback((e: any) => {
+        setSelectItem(e.target.value);
+        const ope = items.indexOf(e.target.value, 0);
+        setNumOpe(ope + 1);
+    }, [seleceItem]);
+
+    const handleV1 = useCallback((e: any) => {
+        setNumV1(e.target.value);
+    }, [numV1])
+
+    const handleV2 = useCallback((e: any) => {
+        setNumV2(e.target.value);
+    }, [numV1])
+
+    const handleFetchEvent = useCallback(() => {
+        fetch(`https://lol-history-2u5scyjy7-sight2nd.vercel.app/api/calc?ope=${numOpe}&v1=${numV1}&v2=${numV2}`)
+            .then(res => res.json())
+            .then(data => {
+                console.log("aaa", data.result);
+                setResultNum(data.result);
+            })
+    }, [numOpe, numV1, numV2])
+
     /* life-cycle */
     useEffect(() => {
         document.body.style.backgroundColor = "lightblue"
@@ -127,9 +168,24 @@ export const SamplePage4: React.VFC<Props> = (props) => {
                 <button onClick={handleAdd}>追加</button>
             </div>
             <ItemList array={array} onDelete={(i) => deleteText(i)} />
-            <input type="file" onChange={getFileData} />
+            <input type="file" onChange={(e) => getFileData(e)} />
             <button onClick={onFileDownload} disabled={!fileData || fileData === undefined}>ダウンロード</button>
+            <button onClick={handleBtn}>ボタン</button>
             <Link to="/">一覧へ</Link>
+            <section>
+                <select value={seleceItem} onChange={handlePullChange}>
+                    {items.map((item) => (
+                        <option key={item} value={item}>
+                            {item}
+                        </option>
+                    ))}
+                </select>
+            </section>
+            <input type="number" pattern="^[1-9][0-9]*$" onChange={handleV1} />
+            <input type="number" pattern="^[1-9][0-9]*$" onChange={handleV2} />
+            <p>演算子：{seleceItem}</p>
+            <button onClick={handleFetchEvent}>計算</button>
+            <p>演算子：{resultNum}</p>
         </div>
     )
 }
