@@ -1,5 +1,5 @@
 import { Button } from "@mui/material";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { DrawerComponent } from "./DrawerComponent";
 import { ItemList } from "./ui/item";
@@ -26,12 +26,28 @@ export const SamplePage4: React.VFC<Props> = (props) => {
     // const [text, setText] = useState('');
     /* hooks */
     const param = useSearchParams();
-    const items = ["足し算", "引き算", "かけ算", "わり算"];
-    const [seleceItem, setSelectItem] = useState("足し算");
-    const [numOpe, setNumOpe] = useState(1);
+    /**
+     * items selectItemの設定の仕方が不具合を生みやすいので変更
+     */
+    // const items = ["足し算", "引き算", "かけ算", "わり算"];
+    // const [seleceItem, setSelectItem] = useState("足し算");
+    // ↓
+    const operationsList = [
+        { value: 1, label: '足し算', operation: '+' },
+        { value: 2, label: '引き算', operation: '-' },
+        { value: 3, label: '掛け算', operation: '×' },
+        { value: 4, label: '割り算', operation: '÷' },
+    ];
+    const [selectOperation, setSelectOperation] = useState(1);
+    const displayOperationData = useMemo(() => {
+        return operationsList.find((v) => v.value === selectOperation);
+    }, [selectOperation]);
+    
+    /* ↑により不要のため削除 */
+    // const [numOpe, setNumOpe] = useState(1);
     const [numV1, setNumV1] = useState(0);
     const [numV2, setNumV2] = useState(0);
-    const [resultNum, setResultNum] = useState(0);
+    const [resultNum, setResultNum] = useState(1);
 
     /* state */
     const [text, setText] = useState("");
@@ -116,28 +132,51 @@ export const SamplePage4: React.VFC<Props> = (props) => {
         input.click();
     }, [])
 
-    const handlePullChange = useCallback((e: any) => {
-        setSelectItem(e.target.value);
-        const ope = items.indexOf(e.target.value, 0);
-        setNumOpe(ope + 1);
-    }, [seleceItem]);
+    // const handlePullChange = useCallback((e: any) => {
+    /* anyを使わない */
+    const handlePullChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        // setSelectItem(e.target.value);
+        /* selectOperationはnumber型なのでキャストする */
+        const changeValue = Number(e.target.value);
+        if (!changeValue) {
+            window.alert('選択された値が正しくありません。');
+            return
+        };
+        setSelectOperation(changeValue);
+        // const ope = items.indexOf(e.target.value, 0);
+        // setNumOpe(ope + 1);
+    }, []);
 
-    const handleV1 = useCallback((e: any) => {
-        setNumV1(e.target.value);
+    /**
+     * numV1はnumberで定義されているのに、
+     * eがanyのためe.target.value: stringが代入されてしまっている。
+     */
+    // const handleV1 = useCallback((e: any) => {
+    const handleV1 = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        // setNumV1(e.target.value);
+        const changeValue = Number(e.target.value);
+        if (isNaN(changeValue)) return;
+        setNumV1(changeValue);
     }, [numV1])
 
-    const handleV2 = useCallback((e: any) => {
-        setNumV2(e.target.value);
+    const handleV2 = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        // setNumV2(e.target.value);
+        const changeValue = Number(e.target.value);
+        console.log(changeValue);
+        if (isNaN(changeValue)) return;
+        setNumV2(changeValue);
+
     }, [numV1])
 
     const handleFetchEvent = useCallback(() => {
-        fetch(`https://lol-history-2u5scyjy7-sight2nd.vercel.app/api/calc?ope=${numOpe}&v1=${numV1}&v2=${numV2}`)
+        /* このままだと毎回↓を書くことになるので、何かしら間に挟むモジュールを作成したい。 */
+        fetch(`https://lol-history-2u5scyjy7-sight2nd.vercel.app/api/calc?ope=${selectOperation}&v1=${numV1}&v2=${numV2}`)
             .then(res => res.json())
             .then(data => {
                 console.log("aaa", data.result);
                 setResultNum(data.result);
             })
-    }, [numOpe, numV1, numV2])
+    }, [selectOperation, numV1, numV2])
 
     /* life-cycle */
     useEffect(() => {
@@ -173,17 +212,26 @@ export const SamplePage4: React.VFC<Props> = (props) => {
             <button onClick={handleBtn}>ボタン</button>
             <Link to="/">一覧へ</Link>
             <section>
-                <select value={seleceItem} onChange={handlePullChange}>
-                    {items.map((item) => (
-                        <option key={item} value={item}>
-                            {item}
+                <select value={selectOperation} onChange={handlePullChange}>
+                    {operationsList.map((operation) => (
+                        <option key={`operation_select_${operation.value}`} value={operation.value}>
+                            {operation.label}
                         </option>
                     ))}
                 </select>
             </section>
-            <input type="number" pattern="^[1-9][0-9]*$" onChange={handleV1} />
-            <input type="number" pattern="^[1-9][0-9]*$" onChange={handleV2} />
-            <p>演算子：{seleceItem}</p>
+            {/* inputには基本的にvalueを当てる */}
+            <input type="number" value={`${numV1}`} pattern="^[1-9][0-9]*$" onChange={handleV1} style={{ textAlign: 'right' }} />
+            <input type="number" value={`${numV2}`} pattern="^[1-9][0-9]*$" onChange={handleV2} style={{ textAlign: 'right' }} />
+            {/* ↓こういう時にMemoを使用 */}
+            {/* <p>演算子：{seleceItem}</p> */}
+            {/* <p>演算子：{displayOperationLabel?.label ?? '---'}</p> */}
+            {/* 表示がダサいのでそれっぽく変更 */}
+            <div style={{ display:'flex', gap: '0.25rem', justifyContent: 'space-around', width: '100%' }}>
+                <div style={{width: '50%', textAlign: 'right'}}>{numV1 < 0 ? `(${numV1.toLocaleString()})` : numV1.toLocaleString()}</div>
+                <div style={{ lineHeight: '16px' }}>{displayOperationData?.operation ?? '+'}</div>
+                <div style={{width: '50%'}}>{numV2 < 0 ? `(${numV2.toLocaleString()})` : numV2.toLocaleString()}</div>
+            </div>
             <button onClick={handleFetchEvent}>計算</button>
             <p>結果：{resultNum}</p>
         </div>
