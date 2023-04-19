@@ -185,7 +185,7 @@ export const SamplePage4: React.VFC<Props> = (props) => {
             <input type="number" pattern="^[1-9][0-9]*$" onChange={handleV2} />
             <p>演算子：{seleceItem}</p>
             <button onClick={handleFetchEvent}>計算</button>
-            <p>演算子：{resultNum}</p>
+            <p>結果：{resultNum}</p>
         </div>
     )
 }
